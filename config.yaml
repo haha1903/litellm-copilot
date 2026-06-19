@@ -1,44 +1,53 @@
 # LiteLLM proxy config — Claude Code -> GitHub Copilot backend.
 #
-# Claude Code sends Anthropic Messages API requests (/v1/messages) with model
-# names like "claude-opus-4.8[1m]" / "claude-sonnet-4.6". LiteLLM translates
-# those to the github_copilot/* provider and back to Anthropic SSE events.
+# Requests are routed to Copilot's NATIVE Anthropic endpoint
+# (https://api.githubcopilot.com/v1/messages) via the `anthropic/` provider, so
+# native content blocks (notably PDF `document` blocks) pass through intact —
+# unlike the github_copilot provider, which downgrades to chat/completions and
+# drops them. The copilot_auth callback keeps a fresh bearer token in the env.
 #
-# model_name is what Claude Code asks for (left side / wildcard).
-# litellm_params.model is the real Copilot backend model (right side).
+# model_name is what Claude Code asks for; litellm_params.model is the backend
+# model on the anthropic provider, with api_base pointed at Copilot.
 
 model_list:
   # --- Opus 4.8 (Claude Code default + the [1m] long-context variant) ---
   - model_name: claude-opus-4.8
     litellm_params:
-      model: github_copilot/claude-opus-4.8
+      model: anthropic/claude-opus-4.8
+      api_base: https://api.githubcopilot.com
   - model_name: "claude-opus-4.8[1m]"
     litellm_params:
-      model: github_copilot/claude-opus-4.8
+      model: anthropic/claude-opus-4.8
+      api_base: https://api.githubcopilot.com
   - model_name: claude-opus-4-8
     litellm_params:
-      model: github_copilot/claude-opus-4.8
+      model: anthropic/claude-opus-4.8
+      api_base: https://api.githubcopilot.com
 
   # --- Sonnet 4.6 ---
   - model_name: claude-sonnet-4.6
     litellm_params:
-      model: github_copilot/claude-sonnet-4.6
+      model: anthropic/claude-sonnet-4.6
+      api_base: https://api.githubcopilot.com
   - model_name: claude-sonnet-4-6
     litellm_params:
-      model: github_copilot/claude-sonnet-4.6
+      model: anthropic/claude-sonnet-4.6
+      api_base: https://api.githubcopilot.com
 
   # --- Haiku 4.5 (Claude Code uses it for cheap background tasks) ---
   - model_name: claude-haiku-4.5
     litellm_params:
-      model: github_copilot/claude-haiku-4.5
+      model: anthropic/claude-haiku-4.5
+      api_base: https://api.githubcopilot.com
   - model_name: claude-haiku-4-5
     litellm_params:
-      model: github_copilot/claude-haiku-4.5
+      model: anthropic/claude-haiku-4.5
+      api_base: https://api.githubcopilot.com
 
-# Web search providers. The Copilot backend doesn't support Anthropic's native
-# web_search server tool, so LiteLLM's built-in websearch_interception runs the
-# search server-side (Brave first, Tavily as fallback) and feeds results back to
-# the model. API keys come from BRAVE_API_KEY / TAVILY_API_KEY in the env.
+# Web search providers. Copilot's backend has no web search, so LiteLLM's
+# built-in websearch_interception runs the search server-side (Brave first,
+# Tavily as fallback) and feeds results back to the model. Keys come from
+# BRAVE_API_KEY / TAVILY_API_KEY in the env.
 search_tools:
   - search_tool_name: "brave-search"
     litellm_params:
@@ -50,11 +59,11 @@ search_tools:
 litellm_settings:
   # Surface backend errors instead of silently swallowing them.
   drop_params: true
-  # Intercept Claude Code's web_search tool and execute it via the search_tools
-  # above, since github_copilot can't run server-side web search natively.
-  callbacks: ["websearch_interception"]
+  # copilot_auth: refreshes the Copilot bearer token in the env.
+  # websearch_interception: runs web search server-side for the anthropic provider.
+  callbacks: ["copilot_auth.copilot_auth", "websearch_interception"]
   websearch_interception_params:
-    enabled_providers: ["github_copilot"]
+    enabled_providers: ["anthropic"]
     search_tool_name: "brave-search"
 
 general_settings:
