@@ -1,0 +1,25 @@
+# Local credentials — must never be baked into the image or committed.
+copilot-creds/
+
+# Python / local dev artifacts
+.venv/
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+
+# Local-only client/dev scripts (documented in README instead)
+trigger_auth.py
+start.sh
+claude.sh
+
+# Editor / OS cruft
+.vscode/
+.idea/
+.DS_Store
+
+# Git / CI metadata not needed in the build context
+.git/
+.github/
+*.md

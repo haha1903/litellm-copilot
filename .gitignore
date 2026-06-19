@@ -1,0 +1,15 @@
+# Local credentials — NEVER commit. Contains the long-lived Copilot OAuth token.
+copilot-creds/
+
+# Python / local dev
+.venv/
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
