@@ -45,13 +45,10 @@ model_list:
       api_base: https://api.githubcopilot.com
 
 # Web search providers. Copilot's backend has no web search, so LiteLLM's
-# built-in websearch_interception runs the search server-side (Brave first,
-# Tavily as fallback) and feeds results back to the model. Keys come from
-# BRAVE_API_KEY / TAVILY_API_KEY in the env.
+# built-in websearch_interception runs the search server-side via Tavily and
+# feeds results back to the model. Tavily returns extracted page content (not
+# just links), which suits fact/recency queries. Key from TAVILY_API_KEY in env.
 search_tools:
-  - search_tool_name: "brave-search"
-    litellm_params:
-      search_provider: "brave"
   - search_tool_name: "tavily-search"
     litellm_params:
       search_provider: "tavily"
@@ -64,7 +61,7 @@ litellm_settings:
   callbacks: ["copilot_auth.copilot_auth", "websearch_interception"]
   websearch_interception_params:
     enabled_providers: ["anthropic"]
-    search_tool_name: "brave-search"
+    search_tool_name: "tavily-search"
 
 general_settings:
   # Proxy access control. Clients must send this key as their Anthropic auth
