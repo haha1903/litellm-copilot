@@ -13,6 +13,7 @@ import os
 import threading
 import time
 
+from litellm.constants import LITELLM_WEB_SEARCH_TOOL_NAME
 from litellm.integrations.custom_logger import CustomLogger
 from litellm.llms.github_copilot.authenticator import Authenticator
 
@@ -51,6 +52,16 @@ class CopilotAuth(CustomLogger):
         headers.setdefault("Editor-Version", "vscode/1.96.0")
         headers.setdefault("Copilot-Integration-Id", "vscode-chat")
         data["extra_headers"] = headers
+
+        # websearch_interception rewrites web_search_* tools to litellm_web_search
+        # but leaves tool_choice.name untouched, so a forced web_search tool_choice
+        # (Claude Code's search sub-agent) no longer matches the tool list and the
+        # backend rejects it. Pre-align tool_choice.name to the converted name.
+        tool_choice = data.get("tool_choice")
+        if isinstance(tool_choice, dict) and tool_choice.get("type") == "tool":
+            name = tool_choice.get("name", "")
+            if name == "WebSearch" or name.startswith("web_search"):
+                tool_choice["name"] = LITELLM_WEB_SEARCH_TOOL_NAME
         return data
 
 
