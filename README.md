@@ -129,7 +129,7 @@ The Copilot backend currently exposes these Claude models (all but the 4.5-tier 
 | `claude-opus-4.5`, `claude-sonnet-4.5` | 200K |
 | `claude-haiku-4.5` | 200K |
 
-The `config.yaml` `claude-*` catch-all passes any other `claude-…` name straight through, so new models work without a config change (as long as the Copilot backend name matches).
+Each model is mapped explicitly in `config.yaml` (both the dotted name Claude Code displays and the dash form it sometimes sends). To support a new model, add a `model_list` entry pointing its name at the matching `github_copilot/<name>` backend.
 
 ---
 

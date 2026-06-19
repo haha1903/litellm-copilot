@@ -35,11 +35,6 @@ model_list:
     litellm_params:
       model: github_copilot/claude-haiku-4.5
 
-  # --- Catch-all: any other claude-* name maps straight through ---
-  - model_name: "claude-*"
-    litellm_params:
-      model: github_copilot/*
-
 # Web search providers. The Copilot backend doesn't support Anthropic's native
 # web_search server tool, so LiteLLM's built-in websearch_interception runs the
 # search server-side (Brave first, Tavily as fallback) and feeds results back to
