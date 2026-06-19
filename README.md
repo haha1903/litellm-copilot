@@ -133,6 +133,31 @@ The `config.yaml` `claude-*` catch-all passes any other `claude-…` name straig
 
 ---
 
+## Web search (optional)
+
+The GitHub Copilot backend can't run Anthropic's native `web_search` server tool. To make web search work in Claude Code anyway, this proxy uses LiteLLM's built-in **`websearch_interception`**: when Claude Code sends a `web_search` tool, the proxy runs the search server-side via **Brave** (primary) or **Tavily** (fallback), feeds the results back to the model, and returns the answer.
+
+Enable it by setting either or both API keys as env vars (no config change needed — `config.yaml` already wires up both providers):
+
+```bash
+BRAVE_API_KEY=...     # primary
+TAVILY_API_KEY=...    # fallback
+```
+
+On ACA, add them the same way as the other secrets:
+
+```bash
+az containerapp update -n litellm-copilot -g <rg> \
+  --set-env-vars BRAVE_API_KEY=secretref:brave-key TAVILY_API_KEY=secretref:tavily-key \
+  --secrets brave-key="..." tavily-key="..."
+```
+
+If neither key is set, web search requests fall back to the model answering without search (no error).
+
+> **Behavior note:** this is a real server-side agentic loop — the search result is sent back through the Copilot model to compose the final answer, so a web-search turn costs one extra model round-trip. Results are returned as text rather than Claude's native citation cards.
+
+---
+
 ## Run locally (Docker)
 
 ```bash
@@ -170,6 +195,8 @@ Tags published: `vX.Y.Z`, `vX.Y`, `vX`, and `latest`.
 |---|---|---|
 | `GH_COPILOT_TOKEN` | yes | Long-lived GitHub Copilot OAuth token (`ghu_...`) |
 | `LITELLM_MASTER_KEY` | yes | Proxy access key clients must send (`sk-...`) |
+| `BRAVE_API_KEY` | no | Brave Search API key — enables web search (primary provider) |
+| `TAVILY_API_KEY` | no | Tavily Search API key — web search fallback provider |
 | `GITHUB_COPILOT_TOKEN_DIR` | no | Where the token/derived key live in-container (default `/app/copilot-creds`) |
 
 Credits: built on [BerriAI/litellm](https://github.com/BerriAI/litellm); inspired by [ericc-ch/copilot-api](https://github.com/ericc-ch/copilot-api).

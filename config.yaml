@@ -40,9 +40,27 @@ model_list:
     litellm_params:
       model: github_copilot/*
 
+# Web search providers. The Copilot backend doesn't support Anthropic's native
+# web_search server tool, so LiteLLM's built-in websearch_interception runs the
+# search server-side (Brave first, Tavily as fallback) and feeds results back to
+# the model. API keys come from BRAVE_API_KEY / TAVILY_API_KEY in the env.
+search_tools:
+  - search_tool_name: "brave-search"
+    litellm_params:
+      search_provider: "brave"
+  - search_tool_name: "tavily-search"
+    litellm_params:
+      search_provider: "tavily"
+
 litellm_settings:
   # Surface backend errors instead of silently swallowing them.
   drop_params: true
+  # Intercept Claude Code's web_search tool and execute it via the search_tools
+  # above, since github_copilot can't run server-side web search natively.
+  callbacks: ["websearch_interception"]
+  websearch_interception_params:
+    enabled_providers: ["github_copilot"]
+    search_tool_name: "brave-search"
 
 general_settings:
   # Proxy access control. Clients must send this key as their Anthropic auth
