@@ -5,17 +5,19 @@
 # so PDF document blocks pass through.
 #
 # Uses a patched LiteLLM image (ghcr.io/haha1903/litellm) that makes the web
-# search short-circuit path emit native server_tool_use + web_search_tool_result
+# search agentic-loop path emit native server_tool_use + web_search_tool_result
 # blocks, so Claude Code renders real citation cards instead of "Did 0 searches".
-# See https://github.com/haha1903/litellm — branch build-image (fix
-# fix/websearch-native-block-detection). Revert to ghcr.io/berriai/litellm:main-stable
-# once that fix is upstream.
+# See https://github.com/haha1903/litellm — branch build-image. Pinned to an
+# immutable tag (not patched-latest) so the canary and full rollout pull the
+# exact same image. NOTE: the CI strips the "patched-" prefix, so git tag
+# patched-v0.2.0 publishes the image tag v0.2.0. Revert to
+# ghcr.io/berriai/litellm:main-stable once the fix is upstream.
 #
 # Adds:
 #   - config.yaml          : model mapping to the anthropic provider @ Copilot
 #   - copilot_auth.py      : callback that keeps a fresh Copilot bearer token in env
 #   - docker-entrypoint.sh : injects the Copilot OAuth token from env at startup
-FROM ghcr.io/haha1903/litellm:patched-latest
+FROM ghcr.io/haha1903/litellm:v0.2.0
 
 WORKDIR /app
 
