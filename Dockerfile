@@ -5,11 +5,12 @@
 # GithubCopilotMessagesConfig (see config.yaml) — the provider injects the
 # Copilot bearer token itself, so there is no copilot_auth.py callback.
 #
-# Base carries GithubCopilotMessagesConfig (ghcr.io/haha1903/litellm, branch
-# feat/native-messages-provider). docker-entrypoint.sh writes GH_COPILOT_TOKEN
-# into the file the Authenticator reads ($GITHUB_COPILOT_TOKEN_DIR/access-token)
-# at startup.
-FROM ghcr.io/haha1903/litellm:native-test
+# Base (ghcr.io/haha1903/litellm:v0.3.0, branch build-image) carries both the
+# native GithubCopilotMessagesConfig and the agentic-loop web_search
+# server_tool_use fix. docker-entrypoint.sh writes GH_COPILOT_TOKEN into the
+# file the Authenticator reads ($GITHUB_COPILOT_TOKEN_DIR/access-token) at
+# startup.
+FROM ghcr.io/haha1903/litellm:v0.3.0
 
 WORKDIR /app
 
