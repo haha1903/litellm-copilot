@@ -21,6 +21,13 @@ RUN chmod +x /app/docker-entrypoint.sh
 # caches the short-lived API key.
 ENV GITHUB_COPILOT_TOKEN_DIR=/app/copilot-creds
 
+# Use the bundled anthropic-beta headers config (which aliases github_copilot ->
+# anthropic) instead of fetching it remotely. The beta-header filter drops any
+# header for a provider not in the config; without this the remote config (no
+# github_copilot entry) would strip anthropic-beta: context-management-* and the
+# Copilot backend would 400 on context_management requests from Claude Code.
+ENV LITELLM_LOCAL_ANTHROPIC_BETA_HEADERS=True
+
 EXPOSE 4000
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
