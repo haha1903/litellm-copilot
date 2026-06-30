@@ -1,35 +1,33 @@
 # LiteLLM proxy that exposes a GitHub Copilot subscription as an
 # Anthropic-compatible API (/v1/messages) for Claude Code and similar tools.
 #
-# Routes Claude requests to Copilot's native Anthropic endpoint (see config.yaml)
-# so PDF document blocks pass through.
+# Routes Claude requests through the github_copilot provider directly via
+# GithubCopilotMessagesConfig (see config.yaml) — the provider injects the
+# Copilot bearer token itself, so there is no copilot_auth.py callback.
 #
-# Uses a patched LiteLLM image (ghcr.io/haha1903/litellm) that makes the web
-# search agentic-loop path emit native server_tool_use + web_search_tool_result
-# blocks, so Claude Code renders real citation cards instead of "Did 0 searches".
-# See https://github.com/haha1903/litellm — branch build-image. Pinned to an
-# immutable tag (not patched-latest) so the canary and full rollout pull the
-# exact same image. NOTE: the CI strips the "patched-" prefix, so git tag
-# patched-v0.2.0 publishes the image tag v0.2.0. Revert to
-# ghcr.io/berriai/litellm:main-stable once the fix is upstream.
-#
-# Adds:
-#   - config.yaml          : model mapping to the anthropic provider @ Copilot
-#   - copilot_auth.py      : callback that keeps a fresh Copilot bearer token in env
-#   - docker-entrypoint.sh : injects the Copilot OAuth token from env at startup
-FROM ghcr.io/haha1903/litellm:v0.2.0
+# Base (ghcr.io/haha1903/litellm:v0.3.0, branch build-image) carries both the
+# native GithubCopilotMessagesConfig and the agentic-loop web_search
+# server_tool_use fix. docker-entrypoint.sh writes GH_COPILOT_TOKEN into the
+# file the Authenticator reads ($GITHUB_COPILOT_TOKEN_DIR/access-token) at
+# startup.
+FROM ghcr.io/haha1903/litellm:v0.3.0
 
 WORKDIR /app
 
 COPY config.yaml /app/config.yaml
-COPY copilot_auth.py /app/copilot_auth.py
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
-# Where the Authenticator reads the long-lived OAuth token and caches the
-# short-lived API key. PYTHONPATH lets LiteLLM import the copilot_auth callback.
+# Where the github_copilot Authenticator reads the long-lived OAuth token and
+# caches the short-lived API key.
 ENV GITHUB_COPILOT_TOKEN_DIR=/app/copilot-creds
-ENV PYTHONPATH=/app
+
+# Use the bundled anthropic-beta headers config (which aliases github_copilot ->
+# anthropic) instead of fetching it remotely. The beta-header filter drops any
+# header for a provider not in the config; without this the remote config (no
+# github_copilot entry) would strip anthropic-beta: context-management-* and the
+# Copilot backend would 400 on context_management requests from Claude Code.
+ENV LITELLM_LOCAL_ANTHROPIC_BETA_HEADERS=True
 
 EXPOSE 4000
 
