@@ -1,0 +1,26 @@
+# EXPERIMENTAL image: github_copilot native Anthropic Messages provider.
+#
+# Unlike the production Dockerfile (anthropic/ provider + copilot_auth.py
+# callback), this routes Claude requests through the github_copilot provider
+# directly via GithubCopilotMessagesConfig (config-native.yaml). No
+# copilot_auth.py — the provider injects the bearer token itself.
+#
+# Base carries GithubCopilotMessagesConfig (branch feat/native-messages-provider).
+# docker-entrypoint.sh is still needed: it writes GH_COPILOT_TOKEN into the file
+# the Authenticator reads ($GITHUB_COPILOT_TOKEN_DIR/access-token) at startup.
+FROM ghcr.io/haha1903/litellm:native-test
+
+WORKDIR /app
+
+COPY config-native.yaml /app/config.yaml
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Where the github_copilot Authenticator reads the long-lived OAuth token and
+# caches the short-lived API key.
+ENV GITHUB_COPILOT_TOKEN_DIR=/app/copilot-creds
+
+EXPOSE 4000
+
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
+CMD ["--config", "/app/config.yaml", "--port", "4000"]

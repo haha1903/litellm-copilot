@@ -1,0 +1,56 @@
+# EXPERIMENTAL config for the native github_copilot provider.
+#
+# Unlike config.yaml (which uses the anthropic/ provider + api_base override +
+# the copilot_auth.py callback to inject the bearer token), this routes Claude
+# requests through the github_copilot provider directly. The provider's
+# GithubCopilotMessagesConfig serves /v1/messages natively and handles the
+# Copilot bearer/editor-header auth + token refresh itself, so NO copilot_auth
+# callback is needed.
+#
+# Requires the patched litellm base image carrying GithubCopilotMessagesConfig.
+
+model_list:
+  # --- Opus 4.8 (Claude Code default + the [1m] long-context variant) ---
+  - model_name: claude-opus-4.8
+    litellm_params:
+      model: github_copilot/claude-opus-4.8
+  - model_name: "claude-opus-4.8[1m]"
+    litellm_params:
+      model: github_copilot/claude-opus-4.8
+  - model_name: claude-opus-4-8
+    litellm_params:
+      model: github_copilot/claude-opus-4.8
+
+  # --- Sonnet 4.6 ---
+  - model_name: claude-sonnet-4.6
+    litellm_params:
+      model: github_copilot/claude-sonnet-4.6
+  - model_name: claude-sonnet-4-6
+    litellm_params:
+      model: github_copilot/claude-sonnet-4.6
+
+  # --- Haiku 4.5 ---
+  - model_name: claude-haiku-4.5
+    litellm_params:
+      model: github_copilot/claude-haiku-4.5
+  - model_name: claude-haiku-4-5
+    litellm_params:
+      model: github_copilot/claude-haiku-4.5
+
+# Web search via LiteLLM's websearch_interception, now enabled for the
+# github_copilot provider (the native path runs through the agentic loop).
+search_tools:
+  - search_tool_name: "tavily-search"
+    litellm_params:
+      search_provider: "tavily"
+
+litellm_settings:
+  drop_params: true
+  # No copilot_auth callback — the github_copilot provider handles auth itself.
+  callbacks: ["websearch_interception"]
+  websearch_interception_params:
+    enabled_providers: ["github_copilot"]
+    search_tool_name: "tavily-search"
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
